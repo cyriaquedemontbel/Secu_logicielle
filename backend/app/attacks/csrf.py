@@ -2,7 +2,7 @@
 CSRF attack simulation.
 """
 
-from attack_tools import get_forms, make_id
+from .attack_tools import get_forms, make_id
 from app.models import Asset, Evidence, Finding, Severity
 
 def csrf_findings(target_url: str, run_id: str) -> list[Finding]:
