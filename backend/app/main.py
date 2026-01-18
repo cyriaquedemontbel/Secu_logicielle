@@ -67,6 +67,7 @@ class ScanRequest(BaseModel):
     target_url: str
     max_duration_sec: int = 300
     lab_mode: bool = False
+    attacks: Optional[dict] = None
 
     @field_validator("target_url")
     @classmethod
@@ -172,6 +173,7 @@ async def create_scan(request: ScanRequest):
         target_url=request.target_url,
         max_duration_sec=request.max_duration_sec,
         lab_mode=lab_mode_enabled,
+        attack_options=request.attacks,
     )
     create_run(run)
 

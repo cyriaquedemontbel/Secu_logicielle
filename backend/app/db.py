@@ -34,6 +34,7 @@ def init_db():
                 progress INTEGER DEFAULT 0,
                 max_duration_sec INTEGER DEFAULT 300,
                 lab_mode INTEGER DEFAULT 0,
+                attack_options TEXT,
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL,
                 error_message TEXT
@@ -68,6 +69,9 @@ def init_db():
         if "lab_mode" not in columns:
             cursor.execute("ALTER TABLE runs ADD COLUMN lab_mode INTEGER DEFAULT 0")
             conn.commit()
+        if "attack_options" not in columns:
+            cursor.execute("ALTER TABLE runs ADD COLUMN attack_options TEXT")
+            conn.commit()
 
 
 @contextmanager
@@ -89,8 +93,8 @@ def create_run(run: ScanRun) -> ScanRun:
         cursor = conn.cursor()
         cursor.execute(
             """
-            INSERT INTO runs (id, target_url, status, progress, max_duration_sec, lab_mode, created_at, updated_at, error_message)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO runs (id, target_url, status, progress, max_duration_sec, lab_mode, attack_options, created_at, updated_at, error_message)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 run.id,
@@ -99,6 +103,7 @@ def create_run(run: ScanRun) -> ScanRun:
                 run.progress,
                 run.max_duration_sec,
                 1 if run.lab_mode else 0,
+                json.dumps(run.attack_options) if getattr(run, "attack_options", None) is not None else None,
                 run.created_at.isoformat(),
                 run.updated_at.isoformat(),
                 run.error_message,
@@ -118,6 +123,13 @@ def get_run(run_id: str) -> Optional[ScanRun]:
         if not row:
             return None
         
+        attack_opts = None
+        if "attack_options" in row.keys() and row["attack_options"]:
+            try:
+                attack_opts = json.loads(row["attack_options"])
+            except Exception:
+                attack_opts = None
+
         return ScanRun(
             id=row["id"],
             target_url=row["target_url"],
@@ -125,6 +137,7 @@ def get_run(run_id: str) -> Optional[ScanRun]:
             progress=row["progress"],
             max_duration_sec=row["max_duration_sec"],
             lab_mode=bool(row["lab_mode"]) if "lab_mode" in row.keys() else False,
+            attack_options=attack_opts,
             created_at=datetime.fromisoformat(row["created_at"]),
             updated_at=datetime.fromisoformat(row["updated_at"]),
             error_message=row["error_message"],

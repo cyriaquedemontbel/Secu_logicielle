@@ -8,6 +8,7 @@ export interface ScanRequest {
   target_url: string;
   max_duration_sec?: number;
   lab_mode?: boolean;
+  attacks?: Record<string, any>;
 }
 
 export interface ScanResponse {
@@ -35,6 +36,7 @@ export interface Evidence {
 }
 
 export interface Finding {
+  title: ReactNode;
   id: string;
   asset: Asset;
   category: string;
@@ -83,6 +85,7 @@ export async function startScan(request: ScanRequest): Promise<ScanResponse> {
       target_url: request.target_url,
       max_duration_sec: request.max_duration_sec || 300,
       lab_mode: request.lab_mode || false,
+      attacks: request.attacks || undefined,
     }),
   });
   return handleResponse<ScanResponse>(response);

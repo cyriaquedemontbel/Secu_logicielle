@@ -2,7 +2,7 @@
 Least privilege attack simulation.
 """
 
-from attack_tools import get_forms, make_id, get_urls_from_sitemap
+from .attack_tools import get_forms, make_id, get_urls_from_sitemap
 from app.models import Asset, Evidence, Finding, Severity
 import requests
 

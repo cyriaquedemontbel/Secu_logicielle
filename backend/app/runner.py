@@ -18,7 +18,7 @@ from app.db import (
 from app.models import RunStatus, ScanRun
 from app.probes import HeadersProbe, TLSProbe
 from app.reporting import ReportBuilder
-from backend.app.attacks.lab_attacks import run_lab_attacks
+from app.attacks.lab_attacks import run_lab_attacks
 
 # ZAP is optional (requires Docker)
 ZAP_ENABLED = os.environ.get("ZAP_ENABLED", "false").lower() == "true"
@@ -79,7 +79,7 @@ async def run_scan(run: ScanRun):
         if run.lab_mode:
             logger.info(f"[{run_id}] Running lab-mode active tests...")
             try:
-                lab_findings = run_lab_attacks(target_url, run_id)
+                lab_findings = run_lab_attacks(target_url, run_id, run.attack_options)
                 all_findings.extend(lab_findings)
                 logger.info(f"[{run_id}] Lab-mode tests produced {len(lab_findings)} findings")
             except Exception as e:

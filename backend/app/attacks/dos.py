@@ -2,7 +2,7 @@
 Denial of Service (DoS) simulation.
 """
 
-from attack_tools import make_id
+from .attack_tools import make_id
 from app.models import Asset, Evidence, Finding, Severity
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import time
@@ -12,7 +12,7 @@ import sys
 import socket
 from urllib.parse import urlparse
 
-def dos_simulation_findings(target_url: str, run_id: str, total_requests: int = 20, concurrency: int = 4, timeout_sec: int = 3) -> list[Finding]:
+def dos_simulation_findings(target_url: str, run_id: str, total_requests: int = 10, concurrency: int = 2, timeout_sec: int = 2) -> list[Finding]:
     """Simulate a DoS attack by sending multiple concurrent HTTP requests.
 
     Args:
@@ -117,7 +117,7 @@ def resolve_url_to_ip(url: str) -> str:
     except socket.gaierror as error:
         raise ValueError(f"Impossible de résoudre l'URL en adresse IP: {error}")
 
-def ping_flood_findings(target_url: str, run_id: str, count: int = 100, interval: float = 0.1) -> list[Finding]:
+def ping_flood_findings(target_url: str, run_id: str, count: int = 10, interval: float = 0.05) -> list[Finding]:
     """Simulate a Ping Flood DoS attack by sending a high volume of ICMP echo requests.
 
     Args:
@@ -150,7 +150,14 @@ def ping_flood_findings(target_url: str, run_id: str, count: int = 100, interval
                 stderr=subprocess.PIPE,
                 universal_newlines=True
             )
-            stdout, stderr = process.communicate()
+            try:
+                stdout, stderr = process.communicate(timeout=2)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                stdout, stderr = process.communicate()
+                packet_loss += 1
+                time.sleep(interval)
+                continue
 
             if process.returncode != 0:
                 packet_loss += 1
@@ -219,7 +226,9 @@ def run_dos_simulations(target_url: str, run_id: str) -> list[Finding]:
     """
 
     findings = []
-    findings.extend(dos_simulation_findings(target_url, run_id))
-    findings.extend(ping_flood_findings(target_url, run_id))
+    # Run a lightweight HTTP DoS simulation first (reduced requests)
+    findings.extend(dos_simulation_findings(target_url, run_id, total_requests=10, concurrency=2, timeout_sec=2))
+    # Then run a short ping flood probe with a small number of pings
+    findings.extend(ping_flood_findings(target_url, run_id, count=5, interval=0.02))
 
     return findings
