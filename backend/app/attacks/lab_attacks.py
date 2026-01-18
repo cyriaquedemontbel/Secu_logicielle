@@ -6,7 +6,8 @@ from sql_injection import sql_injection_findings
 from csrf import csrf_findings
 from least_privilege import least_privilege_findings
 from credential_stuffing import credential_stuffing_findings
-from backend.app.attacks.dos import run_dos_simulations
+from dos import run_dos_simulations
+from brute_force import brute_force_findings
 from app.models import Finding
 
 def run_lab_attacks(target_url: str, run_id: str) -> list[Finding]:
@@ -26,5 +27,6 @@ def run_lab_attacks(target_url: str, run_id: str) -> list[Finding]:
     findings.extend(least_privilege_findings(target_url, run_id))
     findings.extend(credential_stuffing_findings(target_url, run_id))
     findings.extend(run_dos_simulations(target_url, run_id))
+    findings.extend(brute_force_findings(target_url, run_id))
 
     return findings

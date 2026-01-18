@@ -5,6 +5,7 @@ SQL injection attack simulation.
 from attack_tools import get_forms, make_id, DEFAULT_SQL_PAYLOADS, SQL_ERROR_PATTERNS
 from app.models import Asset, Evidence, Finding, Severity
 import requests
+import re
 
 def sql_injection_findings(target_url: str, run_id: str) -> list[Finding]:
     """Test for SQL injection vulnerabilities in forms.
