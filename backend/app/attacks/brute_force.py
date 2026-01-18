@@ -3,7 +3,7 @@ import string
 import secrets
 import time
 import random
-from attack_tools import get_forms, make_id
+from app.attacks.attack_tools import get_forms, make_id
 from app.models import Asset, Evidence, Finding, Severity
 
 

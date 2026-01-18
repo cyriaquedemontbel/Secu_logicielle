@@ -2,7 +2,7 @@
 Credential stuffing attack simulation.
 """
 
-from attack_tools import get_forms, make_id, COMMON_CREDENTIALS, looks_like_login_success
+from app.attacks.attack_tools import get_forms, make_id, COMMON_CREDENTIALS, looks_like_login_success
 from app.models import Asset, Evidence, Finding, Severity
 import requests
 

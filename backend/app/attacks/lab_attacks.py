@@ -2,12 +2,12 @@
 Run all security attack simulations.
 """
 
-from sql_injection import sql_injection_findings
-from csrf import csrf_findings
-from least_privilege import least_privilege_findings
-from credential_stuffing import credential_stuffing_findings
-from dos import run_dos_simulations
-from brute_force import brute_force_findings
+from app.attacks.sql_injection import sql_injection_findings
+from app.attacks.csrf import csrf_findings
+from app.attacks.least_privilege import least_privilege_findings
+from app.attacks.credential_stuffing import credential_stuffing_findings
+from app.attacks.dos import run_dos_simulations
+from app.attacks.brute_force import brute_force_findings
 from app.models import Finding
 
 def run_lab_attacks(target_url: str, run_id: str) -> list[Finding]:

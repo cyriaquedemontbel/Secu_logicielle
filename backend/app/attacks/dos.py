@@ -2,7 +2,7 @@
 Denial of Service (DoS) simulation.
 """
 
-from attack_tools import make_id
+from app.attacks.attack_tools import make_id
 from app.models import Asset, Evidence, Finding, Severity
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import time
