@@ -9,6 +9,8 @@ import time
 import requests
 import subprocess
 import sys
+import socket
+from urllib.parse import urlparse
 
 def dos_simulation_findings(target_url: str, run_id: str, total_requests: int = 20, concurrency: int = 4, timeout_sec: int = 3) -> list[Finding]:
     """Simulate a DoS attack by sending multiple concurrent HTTP requests.
@@ -92,11 +94,34 @@ def dos_simulation_findings(target_url: str, run_id: str, total_requests: int = 
         )
     ]
 
-def ping_flood_findings(target: str, run_id: str, count: int = 100, interval: float = 0.1) -> list[Finding]:
+def resolve_url_to_ip(url: str) -> str:
+    """
+    Résout une URL en adresse IP.
+
+    Args:
+        url (str): L'URL à résoudre.
+
+    Returns:
+        str: L'adresse IP associée à l'URL.
+
+    Raises:
+        ValueError: Si l'URL est invalide ou si la résolution échoue.
+    """
+    try:
+        parsed_url = urlparse(url)
+        if not parsed_url.hostname:
+            raise ValueError("L'URL fournie est invalide.")
+
+        ip_address = socket.gethostbyname(parsed_url.hostname)
+        return ip_address
+    except socket.gaierror as error:
+        raise ValueError(f"Impossible de résoudre l'URL en adresse IP: {error}")
+
+def ping_flood_findings(target_url: str, run_id: str, count: int = 100, interval: float = 0.1) -> list[Finding]:
     """Simulate a Ping Flood DoS attack by sending a high volume of ICMP echo requests.
 
     Args:
-        target (str): The target IP address or hostname to test.
+        target_url (str): The target URL to test.
         run_id (str): A unique identifier for the test run.
         count (int): Total number of ICMP echo requests to send.
         interval (float): Interval in seconds between each ICMP request.
@@ -105,15 +130,20 @@ def ping_flood_findings(target: str, run_id: str, count: int = 100, interval: fl
         list[Finding]: A list of findings related to Ping Flood vulnerabilities.
     """
 
+    try:
+        target_ip = resolve_url_to_ip(target_url)
+    except ValueError as error:
+        print(f"Erreur: {error}")
+        return []
+
     start = time.time()
     packet_loss = 0
 
-    # Determine the appropriate ping command based on the operating system
     param = "-n" if sys.platform.startswith("win") else "-c"
 
     try:
         for _ in range(count):
-            command = ["ping", param, "1", target]
+            command = ["ping", param, "1", target_ip]
             process = subprocess.Popen(
                 command,
                 stdout=subprocess.PIPE,
@@ -139,7 +169,7 @@ def ping_flood_findings(target: str, run_id: str, count: int = 100, interval: fl
         return [
             Finding(
                 id=make_id("LAB-DOS-PING"),
-                asset=Asset(type="ip", value=target),
+                asset=Asset(type="ip", value=target_ip),
                 category="Availability",
                 check="lab_ping_flood",
                 severity=Severity.MEDIUM,
@@ -160,7 +190,7 @@ def ping_flood_findings(target: str, run_id: str, count: int = 100, interval: fl
     return [
         Finding(
             id=make_id("LAB-DOS-PING"),
-            asset=Asset(type="ip", value=target),
+            asset=Asset(type="ip", value=target_ip),
             category="Availability",
             check="lab_ping_flood",
             severity=Severity.INFO,
@@ -177,12 +207,11 @@ def ping_flood_findings(target: str, run_id: str, count: int = 100, interval: fl
         )
     ]
 
-def run_dos_simulations(target_url: str, target_ip: str, run_id: str) -> list[Finding]:
+def run_dos_simulations(target_url: str, run_id: str) -> list[Finding]:
     """Run both HTTP and Ping Flood DoS simulations.
 
     Args:
-        target_url (str): The target URL for HTTP DoS simulation.
-        target_ip (str): The target IP address for Ping Flood simulation.
+        target_url (str): The target URL for both HTTP and Ping Flood simulations.
         run_id (str): A unique identifier for the test run.
 
     Returns:
@@ -191,6 +220,6 @@ def run_dos_simulations(target_url: str, target_ip: str, run_id: str) -> list[Fi
 
     findings = []
     findings.extend(dos_simulation_findings(target_url, run_id))
-    findings.extend(ping_flood_findings(target_ip, run_id))
+    findings.extend(ping_flood_findings(target_url, run_id))
 
     return findings
