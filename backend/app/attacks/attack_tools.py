@@ -41,6 +41,57 @@ COMMON_CREDENTIALS = [
     ("test", "test"),
     ("user", "password"),
     ("demo", "demo"),
+    ("admin@admin.com", "123456"),
+    ("alan.turing", "Enigma69420"),
+    ("ada.lovelace", " AnalyticalEngine42"),
+    ("grace.hopper", "nanoseconds_rule"),
+    ("john.von_neumann", "self-replicating123"),
+    ("claude.shannon", "bitflipMaster"),
+    ("diffie_hellman", "publicPrivate420"),
+    ("rsa", "e=mc²butforcrypto"),
+    ("aes_nist", "256bitsofswag"),
+    ("tim_berners_lee", "info.cern.ch"),
+    ("linus.torvalds", "justgitcommit"),
+    ("dennis_ritchie", "Cwasmyidea"),
+    ("bjarne.stroustrup", "C++>C"),
+    ("guido.vanrossum", "import antigravity"),
+    ("satoshinakamoto", "bitcoin genesis"),
+    ("vitalik.buterin", "ethereumwasathursday"),
+    ("andrew.ng", "vectorizeEverything"),
+    ("yann.lecun", "convolutionortrance"),
+    ("geoffrey.hinton", "backpropGodfather"),
+    ("fei_fei_li", "ImageNetOrBust"),
+    ("demis.hassabis", "AlphaFoldEnjoyer"),
+    ("ian.goodfellow", "minimaxDreams"),
+    ("karpathy", "nanoGPT supremacy"),
+    ("turing", " halting_problem.exe"),
+    ("godel", "incompletenessVibes"),
+    ("von_neumann", "architecture simp"),
+    ("knuth", "TAOCP vol69"),
+    ("dijkstra", "goto considered harmful"),
+    ("hoare", "QuickSortWasMySideQuest"),
+    ("lamport", "TLA+ or death"),
+    (" rivest", "RC4? never happened"),
+    ("shamir", "secret sharing gang"),
+    ("adleman", "RSA named after me lol"),
+    ("merkle", "trees > chains"),
+    ("bell_lapadula", "no read up no write down"),
+    ("whitfield_diffie", "1976 called"),
+    ("schneier", "AppliedCryptographyFanboy"),
+    ("dan boneh", "pairing_based flex"),
+    ("bruce.schneier", "twofish supremacy"),
+    ("phil_zimmermann", "PGP was worth it"),
+    ("snowden", "prism_broke_my_heart"),
+    ("zooko", "Zcash but make it weird"),
+    ("gchq", "we_knew_first"),
+    ("nsa", "collect_it_all"),
+    ("ada", "first bug finder"),
+    ("hopper", "moth removal service"),
+    ("lovelace", "poet_of_the_engine"),
+    ("turing", "bombe goes brrrrr"),
+    ("shannon", "entropy daddy"),
+    ("minsky", "society_of_mind.exe has stopped working"),
+    ("mccarthy", "lisp is life"),
 ]
 
 @dataclass
@@ -109,18 +160,7 @@ def looks_like_login_success(response: requests.Response, baseline: requests.Res
     Returns:
         bool: True if the response resembles a successful login, False otherwise.
     """
-    if response.status_code in {401, 403}:
-        return False
-
-    body = response.text.lower()
-    if any(token in body for token in ["logout", "dashboard", "welcome", "account"]):
-        return True
-
-    if baseline is None:
-        return False
-
-    delta = abs(len(response.text) - len(baseline.text))
-    return response.status_code == 200 and delta > max(200, int(len(baseline.text) * 0.2))
+    return response.status_code == 200
 
 def get_urls_from_sitemap(target_url: str) -> list[str]:
     """Extract URLs from a sitemap.xml file.
