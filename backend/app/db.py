@@ -59,6 +59,15 @@ def init_db():
                 FOREIGN KEY (run_id) REFERENCES runs(id)
             )
         """)
+
+        # Create users table
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                username TEXT PRIMARY KEY,
+                password TEXT NOT NULL,
+                created_at TEXT NOT NULL
+            )
+        """)
         
         conn.commit()
 
@@ -68,6 +77,36 @@ def init_db():
         if "lab_mode" not in columns:
             cursor.execute("ALTER TABLE runs ADD COLUMN lab_mode INTEGER DEFAULT 0")
             conn.commit()
+
+        # Lightweight migration for older DBs missing users columns
+        cursor.execute("PRAGMA table_info(users)")
+        user_columns = {row[1] for row in cursor.fetchall()}
+        if "password" not in user_columns:
+            cursor.execute("ALTER TABLE users ADD COLUMN password TEXT")
+            conn.commit()
+        if "created_at" not in user_columns:
+            cursor.execute("ALTER TABLE users ADD COLUMN created_at TEXT")
+            conn.commit()
+
+        # Seed demo users for the login page
+        seed_users = [("demo", "demo"), ("67", "69")]
+        for username, password in seed_users:
+            cursor.execute(
+                """
+                INSERT OR IGNORE INTO users (username, password, created_at)
+                VALUES (?, ?, ?)
+                """,
+                (username, password, datetime.utcnow().isoformat()),
+            )
+            cursor.execute(
+                """
+                UPDATE users
+                SET password = ?, created_at = COALESCE(created_at, ?)
+                WHERE username = ? AND (password IS NULL OR password = '')
+                """,
+                (password, datetime.utcnow().isoformat(), username),
+            )
+        conn.commit()
 
 
 @contextmanager
@@ -242,3 +281,18 @@ def count_findings_by_severity(run_id: str) -> dict[str, int]:
         )
         rows = cursor.fetchall()
         return {row["severity"]: row["count"] for row in rows}
+
+
+# ============ AUTH OPERATIONS ============
+
+def verify_user_credentials(username: str, password: str) -> bool:
+    """Check whether the username/password pair exists."""
+    if not username or not password:
+        return False
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT 1 FROM users WHERE username = ? AND password = ? LIMIT 1",
+            (username, password),
+        )
+        return cursor.fetchone() is not None

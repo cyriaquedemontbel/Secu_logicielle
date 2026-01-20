@@ -20,6 +20,7 @@ from app.db import (
     get_findings_for_run,
     get_run,
     init_db,
+    verify_user_credentials,
 )
 from app.models import RunStatus, ScanRun
 from app.runner import get_report_path, start_scan_in_background
@@ -41,6 +42,17 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 logger = logging.getLogger(__name__)
+
+# Tokens used to simulate SQL injection errors in the lab login flow.
+SQLI_TOKENS = [
+    "' or '1'='1",
+    '" or "a"="a',
+    "admin' --",
+    "sql syntax",
+    "sqlite",
+    "mysql",
+    "postgres",
+]
 
 # Create FastAPI app
 app = FastAPI(
@@ -131,6 +143,17 @@ class StatusResponse(BaseModel):
     lab_mode: Optional[bool] = None
 
 
+class LoginRequest(BaseModel):
+    """Login request payload."""
+    username: str
+    password: str
+
+
+class LoginResponse(BaseModel):
+    """Login response payload."""
+    username: str
+
+
 # ============ Startup ============
 
 @app.on_event("startup")
@@ -151,6 +174,30 @@ async def startup():
 async def health_check():
     """Health check endpoint."""
     return {"status": "healthy", "service": "security-scanner-api"}
+
+
+# ============ Auth ============
+
+@app.post("/auth/login", response_model=LoginResponse)
+async def login(request: LoginRequest):
+    """Validate credentials against the SQLite demo users table."""
+    username = request.username.strip()
+    password = request.password
+    payload = f"{username} {password}".lower()
+
+    if not username or not password:
+        raise HTTPException(status_code=400, detail="Username and password required")
+
+    if any(token in payload for token in SQLI_TOKENS):
+        raise HTTPException(
+            status_code=500,
+            detail="SQL syntax error near input. This is an intentional lab response.",
+        )
+
+    if not verify_user_credentials(username, password):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+
+    return LoginResponse(username=username)
 
 
 # ============ Scan Endpoints ============

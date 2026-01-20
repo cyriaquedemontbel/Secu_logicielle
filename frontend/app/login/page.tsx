@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 type StatusKind = 'idle' | 'success' | 'error';
 
@@ -10,6 +11,7 @@ type StatusState = {
 };
 
 export default function LoginPage() {
+  const router = useRouter();
   const [status, setStatus] = useState<StatusState>({
     kind: 'idle',
     message: '',
@@ -25,22 +27,23 @@ export default function LoginPage() {
     const formData = new FormData(form);
 
     try {
-      const response = await fetch('/api/login', {
+      const response = await fetch('/api/auth/login', {
         method: 'POST',
         body: formData,
       });
 
-      const message = await response.text();
+      const data = await response.json().catch(() => ({}));
 
       if (response.ok) {
         setStatus({
           kind: 'success',
-          message: message || 'HIGH: Demo credentials accepted.',
+          message: 'Login successful.',
         });
+        router.push('/welcome');
       } else {
         setStatus({
           kind: 'error',
-          message: message || 'Invalid credentials.',
+          message: data?.detail || 'Invalid credentials.',
         });
       }
     } catch (error) {
@@ -55,7 +58,7 @@ export default function LoginPage() {
 
   const statusClass =
     status.kind === 'success'
-      ? 'severity-high'
+      ? 'bg-green-50 border border-green-200 text-green-800'
       : status.kind === 'error'
         ? 'bg-gray-100 border border-gray-300 text-gray-800'
         : '';
@@ -65,13 +68,11 @@ export default function LoginPage() {
       <div className="w-full max-w-lg">
         <div className="card shadow-sm">
           <div className="mb-6 text-center">
-            <h1 className="text-3xl font-bold text-black tracking-tight">Demo Login</h1>
-            <p className="text-sm text-gray-500 mt-2">
-              This page is intentionally insecure for lab testing.
-            </p>
+            <h1 className="text-3xl font-bold text-black tracking-tight">Login</h1>
+            <p className="text-sm text-gray-500 mt-2">Sign in to continue.</p>
           </div>
 
-          <form onSubmit={handleSubmit} method="post" action="/api/login" className="space-y-5">
+          <form onSubmit={handleSubmit} method="post" action="/api/auth/login" className="space-y-5">
             <div>
               <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
                 Username
@@ -106,7 +107,7 @@ export default function LoginPage() {
 
             {status.kind !== 'idle' && (
               <div className={`rounded-md px-4 py-3 text-sm ${statusClass}`}>
-                <p className="font-semibold">{status.kind === 'success' ? 'HIGH' : 'Login failed'}</p>
+                <p className="font-semibold">{status.kind === 'success' ? 'Success' : 'Login failed'}</p>
                 <p>{status.message}</p>
               </div>
             )}
@@ -114,25 +115,6 @@ export default function LoginPage() {
             <button type="submit" className="btn-primary w-full" disabled={isLoading}>
               {isLoading ? 'Signing in...' : 'Sign in'}
             </button>
-          </form>
-
-          <div className="mt-6 text-xs text-gray-500">
-            Use <span className="font-semibold">demo / demo</span> to trigger the HIGH warning.
-          </div>
-        </div>
-
-        <div className="hidden" aria-hidden="true">
-          <form method="post" action="/api/login">
-            <input type="text" name="username" defaultValue="testuser" />
-            <input type="password" name="password" defaultValue="testpass" />
-          </form>
-          <form method="post" action="/api/login">
-            <input type="email" name="email" defaultValue="user@example.com" />
-            <input type="password" name="password" defaultValue="password" />
-          </form>
-          <form method="post" action="/api/login">
-            <input type="text" name="login" defaultValue="admin" />
-            <input type="password" name="password" defaultValue="admin" />
           </form>
         </div>
       </div>

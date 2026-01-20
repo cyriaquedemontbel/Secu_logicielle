@@ -21,7 +21,8 @@ export default function HomePage() {
     setIsLoading(true);
 
     try {
-      const response = await startScan({ target_url: url, lab_mode: true });
+      const labModeEnabled = labMode && isLabEligible(url);
+      const response = await startScan({ target_url: url, lab_mode: labModeEnabled });
       router.push(`/runs/${response.run_id}`);
     } catch (err) {
       if (err instanceof ApiError) {
